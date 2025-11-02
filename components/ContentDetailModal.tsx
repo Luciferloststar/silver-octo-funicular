@@ -1,7 +1,7 @@
-
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ContentItem } from '../types';
 import Modal from './Modal';
+import { MaximizeIcon, RestoreIcon } from './Icons';
 
 interface ContentDetailModalProps {
     isOpen: boolean;
@@ -10,8 +10,14 @@ interface ContentDetailModalProps {
 }
 
 const ContentDetailModal: React.FC<ContentDetailModalProps> = ({ isOpen, onClose, item }) => {
+    const [isMaximized, setIsMaximized] = useState(false);
+
     useEffect(() => {
-        if (!isOpen) return;
+        if (!isOpen) {
+            // Reset maximized state when modal is closed
+            setIsMaximized(false);
+            return;
+        }
 
         const handleContextMenu = (e: MouseEvent) => e.preventDefault();
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -21,19 +27,23 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({ isOpen, onClose
             if (e.key === 'PrintScreen') {
                 e.preventDefault();
             }
+            if (e.key === 'Escape' && isMaximized) {
+                setIsMaximized(false);
+                e.stopPropagation();
+            }
         };
         const handleCopy = (e: ClipboardEvent) => e.preventDefault();
 
         document.addEventListener('contextmenu', handleContextMenu);
-        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keydown', handleKeyDown, true); // Use capture phase for Escape key
         document.addEventListener('copy', handleCopy);
 
         return () => {
             document.removeEventListener('contextmenu', handleContextMenu);
-            document.removeEventListener('keydown', handleKeyDown);
+            document.removeEventListener('keydown', handleKeyDown, true);
             document.removeEventListener('copy', handleCopy);
         };
-    }, [isOpen]);
+    }, [isOpen, isMaximized]);
 
     if (!item) return null;
 
@@ -44,10 +54,10 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({ isOpen, onClose
 
             if (isPdf || isHtml) {
                 return (
-                    <div className="bg-gray-800 p-2 rounded-lg">
+                    <div className="bg-gray-800 p-2 rounded-lg h-full">
                         <iframe
                             src={isPdf ? `${item.contentFileUrl}#toolbar=0` : item.contentFileUrl}
-                            className="w-full h-[60vh] rounded"
+                            className="w-full h-full rounded"
                             title={item.title}
                             sandbox="allow-scripts allow-same-origin"
                         ></iframe>
@@ -71,15 +81,21 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({ isOpen, onClose
         return <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{item.description}</p>;
     };
     
+    const controls = (
+        <button onClick={() => setIsMaximized(!isMaximized)} className="p-1 rounded-full text-gray-400 hover:bg-white/10 hover:text-white transition-colors">
+            {isMaximized ? <RestoreIcon className="w-5 h-5" /> : <MaximizeIcon className="w-5 h-5" />}
+        </button>
+    );
+
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={item.title} size="large">
-            <div className="mt-4">
-                <div className="flex flex-wrap gap-2 mb-6 border-b border-gold/20 pb-4">
+        <Modal isOpen={isOpen} onClose={onClose} title={item.title} size="large" isMaximized={isMaximized} controls={controls}>
+            <div className={`protected-content flex flex-col ${isMaximized ? 'h-full' : 'max-h-[70vh]'}`}>
+                <div className="flex-shrink-0 flex flex-wrap gap-2 mb-6 border-b border-gold/20 pb-4">
                     {item.tags.map(tag => (
                         <span key={tag} className="text-xs text-gold bg-gold/10 px-2 py-1 rounded-full">{tag}</span>
                     ))}
                 </div>
-                <div className="max-h-[65vh] overflow-y-auto pr-4 protected-content">
+                <div className="flex-grow overflow-y-auto pr-2">
                     {renderContent()}
                 </div>
             </div>
