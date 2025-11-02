@@ -13,6 +13,24 @@ import { SAGAR_SAHU_ADMIN } from './constants';
 import { User, Comment, ContentItem, ContentType } from './types';
 import { SoundOnIcon, SoundOffIcon } from './components/Icons';
 
+// Helper function to safely set item in localStorage
+const safeSetLocalStorage = (key: string, value: string) => {
+    try {
+        localStorage.setItem(key, value);
+    } catch (e) {
+        if (e instanceof DOMException && (
+            e.name === 'QuotaExceededError' ||
+            e.name === 'NS_ERROR_DOM_QUOTA_REACHED')) 
+        {
+            console.error(`Error: Local storage quota exceeded for key "${key}".`);
+            alert("Upload failed: Your browser's storage is full. Please back up your data from the dashboard and clear some content to make space.");
+        } else {
+            console.error(`Failed to set localStorage for key "${key}".`, e);
+            alert("An unexpected error occurred while saving data. Please check the console for details.");
+        }
+    }
+};
+
 // --- AuthForm Component ---
 const AuthForm: React.FC<{ onLogin: (profileId: string, password: string) => void, defaultId: string, onForgotPassword: () => void }> = ({ onLogin, defaultId, onForgotPassword }) => {
     const [profileId, setProfileId] = useState(defaultId);
@@ -449,14 +467,14 @@ function App() {
         } catch (error) { console.error("Failed to load from localStorage", error); }
     }, []);
 
-    useEffect(() => { localStorage.setItem('sagar_stories', JSON.stringify(stories)); }, [stories]);
-    useEffect(() => { localStorage.setItem('sagar_documentaries', JSON.stringify(documentaries)); }, [documentaries]);
-    useEffect(() => { localStorage.setItem('sagar_articles', JSON.stringify(articles)); }, [articles]);
-    useEffect(() => { localStorage.setItem('sagar_comments', JSON.stringify(comments)); }, [comments]);
-    useEffect(() => { localStorage.setItem('sagar_admin_password', adminPassword); }, [adminPassword]);
-    useEffect(() => { localStorage.setItem('sagar_social_links', JSON.stringify(socialLinks)); }, [socialLinks]);
-    useEffect(() => { localStorage.setItem('sagar_isLoggedIn', String(isLoggedIn)); }, [isLoggedIn]);
-    useEffect(() => { if(currentUser) localStorage.setItem('sagar_user_profile', JSON.stringify(currentUser)); }, [currentUser]);
+    useEffect(() => { safeSetLocalStorage('sagar_stories', JSON.stringify(stories)); }, [stories]);
+    useEffect(() => { safeSetLocalStorage('sagar_documentaries', JSON.stringify(documentaries)); }, [documentaries]);
+    useEffect(() => { safeSetLocalStorage('sagar_articles', JSON.stringify(articles)); }, [articles]);
+    useEffect(() => { safeSetLocalStorage('sagar_comments', JSON.stringify(comments)); }, [comments]);
+    useEffect(() => { safeSetLocalStorage('sagar_admin_password', adminPassword); }, [adminPassword]);
+    useEffect(() => { safeSetLocalStorage('sagar_social_links', JSON.stringify(socialLinks)); }, [socialLinks]);
+    useEffect(() => { safeSetLocalStorage('sagar_isLoggedIn', String(isLoggedIn)); }, [isLoggedIn]);
+    useEffect(() => { if(currentUser) safeSetLocalStorage('sagar_user_profile', JSON.stringify(currentUser)); }, [currentUser]);
     
     // --- Handlers ---
     const handleScrollTo = (id: string) => {
@@ -504,6 +522,14 @@ function App() {
 
     const handleProfileUpdate = (updatedUser: User) => {
         setCurrentUser(updatedUser);
+    };
+
+    const handleReadMoreClick = (item: ContentItem) => {
+        if (isLoggedIn) {
+            setSelectedContent(item);
+        } else {
+            setAuthModalOpen(true);
+        }
     };
 
     const fileToDataUrl = (file: File): Promise<string> => {
@@ -572,10 +598,10 @@ function App() {
             <div className="absolute inset-0 h-screen bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(255,215,0,0.15),rgba(255,255,255,0))] opacity-50"></div>
             <Navbar onScrollTo={handleScrollTo} onAuthClick={() => setAuthModalOpen(true)} onAdminClick={() => setAdminModalOpen(true)} isLoggedIn={isLoggedIn} user={currentUser} onLogout={handleLogout} onChangePassword={() => setPasswordModalOpen(true)} onProfileSettings={() => setProfileModalOpen(true)} />
             <main>
-                <div ref={sectionRefs.home}><HeroSlider slides={allContentForSlider} onSlideClick={setSelectedContent} /></div>
-                <div ref={sectionRefs.stories}><ContentSection id="stories" title="Featured Stories" items={stories} isAdmin={isAdmin} onDeleteContent={handleDeleteContent} onReadMore={setSelectedContent} /></div>
-                <div ref={sectionRefs.documentaries}><ContentSection id="documentaries" title="Documentaries" items={documentaries} isAdmin={isAdmin} onDeleteContent={handleDeleteContent} onReadMore={setSelectedContent} /></div>
-                <div ref={sectionRefs.articles}><ContentSection id="articles" title="Articles" items={articles} isAdmin={isAdmin} onDeleteContent={handleDeleteContent} onReadMore={setSelectedContent} /></div>
+                <div ref={sectionRefs.home}><HeroSlider slides={allContentForSlider} onSlideClick={handleReadMoreClick} /></div>
+                <div ref={sectionRefs.stories}><ContentSection id="stories" title="Featured Stories" items={stories} isAdmin={isAdmin} onDeleteContent={handleDeleteContent} onReadMore={handleReadMoreClick} /></div>
+                <div ref={sectionRefs.documentaries}><ContentSection id="documentaries" title="Documentaries" items={documentaries} isAdmin={isAdmin} onDeleteContent={handleDeleteContent} onReadMore={handleReadMoreClick} /></div>
+                <div ref={sectionRefs.articles}><ContentSection id="articles" title="Articles" items={articles} isAdmin={isAdmin} onDeleteContent={handleDeleteContent} onReadMore={handleReadMoreClick} /></div>
                 <CommunitySection isLoggedIn={isLoggedIn} comments={comments} currentUser={currentUser} onAddComment={handleAddComment} />
                 <div ref={sectionRefs.about}><AboutSection user={currentUser || SAGAR_SAHU_ADMIN} /></div>
             </main>
