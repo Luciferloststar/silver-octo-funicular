@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserIcon } from './Icons';
@@ -13,6 +12,9 @@ interface NavbarProps {
     onProfileSettings: () => void;
     isLoggedIn: boolean;
     user: User | null;
+    isReaderLoggedIn: boolean;
+    readerEmail: string | null;
+    onReaderLogout: () => void;
 }
 
 const navLinks = [
@@ -24,7 +26,7 @@ const navLinks = [
     { id: 'contact', name: 'Contact' },
 ];
 
-const Navbar: React.FC<NavbarProps> = ({ onScrollTo, onAuthClick, onAdminClick, isLoggedIn, user, onLogout, onChangePassword, onProfileSettings }) => {
+const Navbar: React.FC<NavbarProps> = ({ onScrollTo, onAuthClick, onAdminClick, isLoggedIn, user, onLogout, onChangePassword, onProfileSettings, isReaderLoggedIn, readerEmail, onReaderLogout }) => {
     const [scrolled, setScrolled] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -90,6 +92,11 @@ const Navbar: React.FC<NavbarProps> = ({ onScrollTo, onAuthClick, onAdminClick, 
                                     </motion.div>
                                 )}
                             </AnimatePresence>
+                        </div>
+                    ) : isReaderLoggedIn && readerEmail ? (
+                        <div className="flex items-center space-x-2 text-sm">
+                            <span className="text-gray-300 hidden sm:block truncate max-w-[150px]">{readerEmail}</span>
+                            <button onClick={onReaderLogout} className="text-gold hover:underline text-xs">(Logout)</button>
                         </div>
                     ) : (
                          <button onClick={onAuthClick} className="border border-gold text-gold px-4 py-2 rounded-md hover:bg-gold hover:text-black transition-all duration-300 flex items-center space-x-2">

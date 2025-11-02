@@ -3,21 +3,24 @@ import { Comment, User } from '../types';
 
 interface CommunitySectionProps {
     isLoggedIn: boolean;
+    isReaderLoggedIn: boolean;
+    userForComment: User | null;
     comments: Comment[];
-    currentUser: User | null;
     onAddComment: (text: string) => void;
 }
 
-const CommunitySection: React.FC<CommunitySectionProps> = ({ isLoggedIn, comments, currentUser, onAddComment }) => {
+const CommunitySection: React.FC<CommunitySectionProps> = ({ isLoggedIn, isReaderLoggedIn, userForComment, comments, onAddComment }) => {
     const [newComment, setNewComment] = useState('');
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (newComment.trim() && isLoggedIn) {
+        if (newComment.trim() && userForComment) {
             onAddComment(newComment.trim());
             setNewComment('');
         }
     };
+
+    const canComment = isLoggedIn || isReaderLoggedIn;
     
     return (
         <section className="py-20 bg-surface">
@@ -33,7 +36,7 @@ const CommunitySection: React.FC<CommunitySectionProps> = ({ isLoggedIn, comment
                             </div>
                         </div>
                     ))}
-                    {isLoggedIn && (
+                    {canComment && userForComment && (
                         <form onSubmit={handleSubmit} className="pt-6">
                            <textarea 
                                 placeholder="Share your thoughts..." 

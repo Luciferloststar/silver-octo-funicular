@@ -1,5 +1,3 @@
-
-
 import React, { useState, useRef, RefObject, useEffect, useMemo } from 'react';
 import Navbar from './components/Navbar';
 import HeroSlider from './components/HeroSlider';
@@ -72,6 +70,32 @@ const AuthForm: React.FC<{ onLogin: (profileId: string, password: string) => voi
         </form>
     );
 };
+
+// --- ReaderAuthForm Component ---
+const ReaderAuthForm: React.FC<{ onLogin: (email: string) => void }> = ({ onLogin }) => {
+    const [email, setEmail] = useState('');
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (email.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            onLogin(email.trim());
+        } else {
+            alert("Please enter a valid email address.");
+        }
+    };
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <p className="text-gray-300 text-center">Enter your email to read the full content and join the community.</p>
+            <div>
+                <label className="text-sm font-medium text-gray-400">Email Address</label>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@example.com" className="w-full mt-1 p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none transition-all" />
+            </div>
+            <button type="submit" className="w-full py-3 bg-gold text-black font-bold rounded-lg hover:bg-yellow-300 transition-colors">
+                Continue
+            </button>
+        </form>
+    );
+};
+
 
 // --- ForgotPasswordForm Component ---
 const ForgotPasswordForm: React.FC<{ onReset: (profileId: string, email: string) => boolean; onClose: () => void; defaultId: string; }> = ({ onReset, onClose, defaultId }) => {
@@ -255,6 +279,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, onAddContent, 
     const [type, setType] = useState<ContentType>(ContentType.Story);
     const restoreInputRef = useRef<HTMLInputElement>(null);
     const [localSocialLinks, setLocalSocialLinks] = useState(socialLinks);
+    const [storageUsage, setStorageUsage] = useState(0);
+    
+    const MAX_STORAGE = 5 * 1024 * 1024; // 5MB
+
+    useEffect(() => {
+        let total = 0;
+        for (const key in localStorage) {
+            if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
+                const value = localStorage.getItem(key);
+                if (value) {
+                    total += (key.length + value.length) * 2; // Size in bytes for UTF-16
+                }
+            }
+        }
+        setStorageUsage(total);
+    }, [allContent]);
+
 
     const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -340,6 +381,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, onAddContent, 
     };
 
     const socialFields: (keyof SocialLinks)[] = ['youtube', 'instagram', 'reddit', 'facebook', 'x'];
+    const usagePercent = Math.min((storageUsage / MAX_STORAGE) * 100, 100);
 
     return (
          <div className="max-h-[80vh] flex flex-col">
@@ -368,13 +410,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, onAddContent, 
                     </form>
                 )}
                 {activeTab === 'settings' && (
-                    <form onSubmit={handleSocialSubmit} className="space-y-4">
-                        <h3 className="text-xl font-serif text-gold">Social Media Links</h3>
-                        {socialFields.map(field => (
-                             <div key={field}><label className="text-sm font-medium text-gray-400 capitalize">{field}</label><input type="url" name={field} placeholder={`https://${field}.com/your-profile`} value={localSocialLinks[field] || ''} onChange={handleSocialLinkChange} className="w-full mt-1 p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none" /></div>
-                        ))}
-                        <button type="submit" className="w-full py-3 bg-gold text-black font-bold rounded-lg hover:bg-yellow-300 transition-colors">Save Social Links</button>
-                    </form>
+                    <div>
+                        <form onSubmit={handleSocialSubmit} className="space-y-4">
+                            <h3 className="text-xl font-serif text-gold">Social Media Links</h3>
+                            {socialFields.map(field => (
+                                 <div key={field}><label className="text-sm font-medium text-gray-400 capitalize">{field}</label><input type="url" name={field} placeholder={`https://${field}.com/your-profile`} value={localSocialLinks[field] || ''} onChange={handleSocialLinkChange} className="w-full mt-1 p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none" /></div>
+                            ))}
+                            <button type="submit" className="w-full py-3 bg-gold text-black font-bold rounded-lg hover:bg-yellow-300 transition-colors">Save Social Links</button>
+                        </form>
+                         <div className="mt-8 pt-6 border-t border-gold/20">
+                            <h3 className="text-xl font-serif text-gold">Storage Usage</h3>
+                            <p className="text-sm text-gray-400 mt-2">Your browser provides about 5MB of storage for this site. To save space, please optimize images before uploading.</p>
+                            <div className="w-full bg-gold/20 rounded-full h-2.5 mt-2 my-1">
+                                <div className="bg-gold h-2.5 rounded-full" style={{ width: `${usagePercent}%` }}></div>
+                            </div>
+                            <p className="text-right text-xs text-gray-400">
+                                {(storageUsage / 1024 / 1024).toFixed(2)} / 5.00 MB
+                            </p>
+                        </div>
+                    </div>
                 )}
             </div>
         </div>
@@ -420,6 +474,8 @@ function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [adminPassword, setAdminPassword] = useState('password123');
+    const [isReaderLoggedIn, setIsReaderLoggedIn] = useState(false);
+    const [readerEmail, setReaderEmail] = useState<string | null>(null);
     
     // Modal State
     const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -427,7 +483,9 @@ function App() {
     const [passwordModalOpen, setPasswordModalOpen] = useState(false);
     const [profileModalOpen, setProfileModalOpen] = useState(false);
     const [forgotPasswordModalOpen, setForgotPasswordModalOpen] = useState(false);
+    const [readerModalOpen, setReaderModalOpen] = useState(false);
     const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
+    const contentToOpenAfterLogin = useRef<ContentItem | null>(null);
 
     // Site settings state
     const [socialLinks, setSocialLinks] = useState<SocialLinks>({ youtube: '', instagram: '', reddit: '', facebook: '', x: ''});
@@ -458,12 +516,19 @@ function App() {
             setAdminPassword(localStorage.getItem('sagar_admin_password') || 'password123');
             setSocialLinks(JSON.parse(localStorage.getItem('sagar_social_links') || 'null') || { youtube: '', instagram: '', reddit: '', facebook: '', x: ''});
 
-            const loggedIn = localStorage.getItem('sagar_isLoggedIn') === 'true';
-            if (loggedIn) {
+            const loggedInAdmin = localStorage.getItem('sagar_isLoggedIn') === 'true';
+            if (loggedInAdmin) {
                 const userProfile = JSON.parse(localStorage.getItem('sagar_user_profile') || 'null');
                 setIsLoggedIn(true);
                 setCurrentUser(userProfile || SAGAR_SAHU_ADMIN);
             }
+            
+            const loggedInReader = localStorage.getItem('sagar_reader_email');
+            if (loggedInReader) {
+                setIsReaderLoggedIn(true);
+                setReaderEmail(loggedInReader);
+            }
+
         } catch (error) { console.error("Failed to load from localStorage", error); }
     }, []);
 
@@ -475,6 +540,13 @@ function App() {
     useEffect(() => { safeSetLocalStorage('sagar_social_links', JSON.stringify(socialLinks)); }, [socialLinks]);
     useEffect(() => { safeSetLocalStorage('sagar_isLoggedIn', String(isLoggedIn)); }, [isLoggedIn]);
     useEffect(() => { if(currentUser) safeSetLocalStorage('sagar_user_profile', JSON.stringify(currentUser)); }, [currentUser]);
+    useEffect(() => { 
+        if (isReaderLoggedIn && readerEmail) {
+            safeSetLocalStorage('sagar_reader_email', readerEmail);
+        } else {
+            localStorage.removeItem('sagar_reader_email');
+        }
+    }, [isReaderLoggedIn, readerEmail]);
     
     // --- Handlers ---
     const handleScrollTo = (id: string) => {
@@ -488,6 +560,7 @@ function App() {
             setIsLoggedIn(true);
             setCurrentUser(userProfile);
             setAuthModalOpen(false);
+            handleReaderLogout(); // Log out reader if admin logs in
         } else {
             alert('Incorrect Profile ID or password.');
         }
@@ -496,6 +569,21 @@ function App() {
     const handleLogout = () => {
         setIsLoggedIn(false);
         setCurrentUser(null);
+    };
+    
+    const handleReaderLogin = (email: string) => {
+        setIsReaderLoggedIn(true);
+        setReaderEmail(email);
+        setReaderModalOpen(false);
+        if (contentToOpenAfterLogin.current) {
+            setSelectedContent(contentToOpenAfterLogin.current);
+            contentToOpenAfterLogin.current = null;
+        }
+    };
+    
+    const handleReaderLogout = () => {
+        setIsReaderLoggedIn(false);
+        setReaderEmail(null);
     };
 
     const handlePasswordChange = (oldPass: string, newPass: string) => {
@@ -525,12 +613,36 @@ function App() {
     };
 
     const handleReadMoreClick = (item: ContentItem) => {
-        if (isLoggedIn) {
+        if (isLoggedIn || isReaderLoggedIn) {
             setSelectedContent(item);
         } else {
-            setAuthModalOpen(true);
+            contentToOpenAfterLogin.current = item;
+            setReaderModalOpen(true);
         }
     };
+
+    const handleDetailClose = () => {
+        setSelectedContent(null);
+        history.pushState("", document.title, window.location.pathname + window.location.search);
+    };
+
+    // Sharing via URL hash effect
+    useEffect(() => {
+        const handleHashChange = () => {
+            const hash = window.location.hash;
+            if (hash.startsWith('#content/')) {
+                const contentId = hash.substring('#content/'.length);
+                if (stories.length > 0 || articles.length > 0 || documentaries.length > 0) {
+                    const allContent = [...stories, ...documentaries, ...articles];
+                    const item = allContent.find(c => c.id === contentId);
+                    if (item) {
+                        handleReadMoreClick(item);
+                    }
+                }
+            }
+        };
+        handleHashChange();
+    }, [stories, documentaries, articles, isReaderLoggedIn, isLoggedIn]);
 
     const fileToDataUrl = (file: File): Promise<string> => {
         return new Promise((resolve, reject) => {
@@ -580,29 +692,45 @@ function App() {
         setter(prev => prev.filter(item => item.id !== id));
     };
     
+    const userForComment = useMemo(() => {
+        if (isLoggedIn && currentUser) {
+            return currentUser;
+        }
+        if (isReaderLoggedIn && readerEmail) {
+            return {
+                id: readerEmail,
+                email: readerEmail,
+                notificationEmail: readerEmail,
+                username: readerEmail.split('@')[0],
+                avatar: `https://i.pravatar.cc/150?u=${encodeURIComponent(readerEmail)}`
+            };
+        }
+        return null;
+    }, [isLoggedIn, currentUser, isReaderLoggedIn, readerEmail]);
+
     const handleAddComment = (text: string) => {
-        if (!currentUser) return;
+        if (!userForComment) return;
         const newComment: Comment = {
             id: `comment-${Date.now()}`,
-            user: currentUser,
+            user: userForComment,
             text,
             timestamp: 'Just now'
         };
         setComments(prev => [newComment, ...prev]);
     };
 
-    const isAdmin = currentUser?.id === SAGAR_SAHU_ADMIN.id;
+    const isAdmin = isLoggedIn && currentUser?.id === SAGAR_SAHU_ADMIN.id;
 
     return (
         <div className="bg-[#0a0a0a] min-h-screen relative">
             <div className="absolute inset-0 h-screen bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(255,215,0,0.15),rgba(255,255,255,0))] opacity-50"></div>
-            <Navbar onScrollTo={handleScrollTo} onAuthClick={() => setAuthModalOpen(true)} onAdminClick={() => setAdminModalOpen(true)} isLoggedIn={isLoggedIn} user={currentUser} onLogout={handleLogout} onChangePassword={() => setPasswordModalOpen(true)} onProfileSettings={() => setProfileModalOpen(true)} />
+            <Navbar onScrollTo={handleScrollTo} onAuthClick={() => setAuthModalOpen(true)} onAdminClick={() => setAdminModalOpen(true)} isLoggedIn={isLoggedIn} user={currentUser} onLogout={handleLogout} onChangePassword={() => setPasswordModalOpen(true)} onProfileSettings={() => setProfileModalOpen(true)} isReaderLoggedIn={isReaderLoggedIn} readerEmail={readerEmail} onReaderLogout={handleReaderLogout} />
             <main>
                 <div ref={sectionRefs.home}><HeroSlider slides={allContentForSlider} onSlideClick={handleReadMoreClick} /></div>
                 <div ref={sectionRefs.stories}><ContentSection id="stories" title="Featured Stories" items={stories} isAdmin={isAdmin} onDeleteContent={handleDeleteContent} onReadMore={handleReadMoreClick} /></div>
                 <div ref={sectionRefs.documentaries}><ContentSection id="documentaries" title="Documentaries" items={documentaries} isAdmin={isAdmin} onDeleteContent={handleDeleteContent} onReadMore={handleReadMoreClick} /></div>
                 <div ref={sectionRefs.articles}><ContentSection id="articles" title="Articles" items={articles} isAdmin={isAdmin} onDeleteContent={handleDeleteContent} onReadMore={handleReadMoreClick} /></div>
-                <CommunitySection isLoggedIn={isLoggedIn} comments={comments} currentUser={currentUser} onAddComment={handleAddComment} />
+                <CommunitySection isLoggedIn={isLoggedIn} isReaderLoggedIn={isReaderLoggedIn} userForComment={userForComment} comments={comments} onAddComment={handleAddComment} />
                 <div ref={sectionRefs.about}><AboutSection user={currentUser || SAGAR_SAHU_ADMIN} /></div>
             </main>
             <div ref={sectionRefs.contact}><Footer socialLinks={socialLinks} /></div>
@@ -610,6 +738,9 @@ function App() {
 
             <Modal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} title="Admin Login">
                 <AuthForm onLogin={handleLogin} defaultId={SAGAR_SAHU_ADMIN.id} onForgotPassword={handleForgotPasswordClick} />
+            </Modal>
+            <Modal isOpen={readerModalOpen} onClose={() => setReaderModalOpen(false)} title="Join the Community">
+                <ReaderAuthForm onLogin={handleReaderLogin} />
             </Modal>
             <Modal isOpen={forgotPasswordModalOpen} onClose={() => setForgotPasswordModalOpen(false)} title="Reset Password">
                 <ForgotPasswordForm onReset={handlePasswordReset} onClose={() => setForgotPasswordModalOpen(false)} defaultId={SAGAR_SAHU_ADMIN.id} />
@@ -628,7 +759,7 @@ function App() {
             <Modal isOpen={adminModalOpen} onClose={() => setAdminModalOpen(false)} title="Content Dashboard" size="large">
                 <AdminDashboard onAddContent={handleAddContent} onRestoreAll={handleRestoreAll} allContent={{ stories, documentaries, articles }} socialLinks={socialLinks} onUpdateSocialLinks={setSocialLinks} onClose={() => setAdminModalOpen(false)} />
             </Modal>
-            <ContentDetailModal isOpen={!!selectedContent} onClose={() => setSelectedContent(null)} item={selectedContent} />
+            <ContentDetailModal isOpen={!!selectedContent} onClose={handleDetailClose} item={selectedContent} />
         </div>
     );
 }

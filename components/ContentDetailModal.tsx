@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ContentItem } from '../types';
 import Modal from './Modal';
-import { MaximizeIcon, RestoreIcon } from './Icons';
+import { MaximizeIcon, RestoreIcon, ShareIcon } from './Icons';
 
 interface ContentDetailModalProps {
     isOpen: boolean;
@@ -11,6 +11,7 @@ interface ContentDetailModalProps {
 
 const ContentDetailModal: React.FC<ContentDetailModalProps> = ({ isOpen, onClose, item }) => {
     const [isMaximized, setIsMaximized] = useState(false);
+    const [linkCopied, setLinkCopied] = useState(false);
 
     useEffect(() => {
         if (!isOpen) {
@@ -47,6 +48,15 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({ isOpen, onClose
 
     if (!item) return null;
 
+    const handleShare = () => {
+        if (!item) return;
+        const url = `${window.location.origin}${window.location.pathname}#content/${item.id}`;
+        navigator.clipboard.writeText(url).then(() => {
+            setLinkCopied(true);
+            setTimeout(() => setLinkCopied(false), 2000);
+        });
+    };
+
     const renderContent = () => {
         if (item.contentFileUrl) {
             const isPdf = item.contentFileUrl.startsWith('data:application/pdf');
@@ -82,9 +92,19 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({ isOpen, onClose
     };
     
     const controls = (
-        <button onClick={() => setIsMaximized(!isMaximized)} className="p-1 rounded-full text-gray-400 hover:bg-white/10 hover:text-white transition-colors">
-            {isMaximized ? <RestoreIcon className="w-5 h-5" /> : <MaximizeIcon className="w-5 h-5" />}
-        </button>
+        <>
+            <div className="relative">
+                <button onClick={handleShare} className="p-1 rounded-full text-gray-400 hover:bg-white/10 hover:text-white transition-colors" title="Share Content">
+                    <ShareIcon className="w-5 h-5" />
+                </button>
+                {linkCopied && (
+                    <span className="absolute bottom-full right-0 mb-2 whitespace-nowrap bg-gold text-black text-xs font-bold px-2 py-1 rounded">Link Copied!</span>
+                )}
+            </div>
+            <button onClick={() => setIsMaximized(!isMaximized)} className="p-1 rounded-full text-gray-400 hover:bg-white/10 hover:text-white transition-colors" title={isMaximized ? "Restore" : "Maximize"}>
+                {isMaximized ? <RestoreIcon className="w-5 h-5" /> : <MaximizeIcon className="w-5 h-5" />}
+            </button>
+        </>
     );
 
     return (
