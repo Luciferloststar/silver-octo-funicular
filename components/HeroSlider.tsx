@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { ContentItem } from '../types';
+import { ContentItem, ContentType } from '../types';
 import { ChevronLeftIcon, ChevronRightIcon } from './Icons';
+import { FUTURISTIC_TAGLINES } from '../constants';
 
 interface HeroSliderProps {
     slides: ContentItem[];
+    onSlideClick: (item: ContentItem) => void;
 }
 
 const slideVariants = {
@@ -26,10 +28,11 @@ const slideVariants = {
   })
 };
 
-const HeroSlider: React.FC<HeroSliderProps> = ({ slides }) => {
+const HeroSlider: React.FC<HeroSliderProps> = ({ slides, onSlideClick }) => {
     const [[page, direction], setPage] = useState([0, 0]);
     const { scrollYProgress } = useScroll();
     const parallaxY = useTransform(scrollYProgress, [0, 0.5], [0, 150]);
+    const [taglineIndex, setTaglineIndex] = useState(0);
 
     useEffect(() => {
       if (slides.length > 1) {
@@ -40,12 +43,20 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ slides }) => {
       }
     }, [slides.length]);
 
+    useEffect(() => {
+        const taglineInterval = setInterval(() => {
+            setTaglineIndex(prevIndex => (prevIndex + 1) % FUTURISTIC_TAGLINES.length);
+        }, 4000); // Change tagline every 4 seconds
+
+        return () => clearInterval(taglineInterval);
+    }, []);
+
     if (!slides || slides.length === 0) {
         return (
             <section id="home" className="relative h-screen w-full flex items-center justify-center overflow-hidden text-white">
                 <div 
-                    className="absolute inset-0 bg-cover bg-center"
-                    style={{ backgroundImage: `url('https://picsum.photos/seed/default-hero/1920/1080')` }}
+                    className="absolute inset-0 bg-cover bg-center kenburns"
+                    style={{ backgroundImage: `url('https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')` }}
                 >
                     <div className="absolute inset-0 bg-black/60"></div>
                 </div>
@@ -54,18 +65,22 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ slides }) => {
                         initial={{ opacity: 0, y: 50 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8 }}
-                        className="text-5xl md:text-7xl font-black font-serif text-gold drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]"
+                        className="text-5xl md:text-7xl font-black font-serif text-gold drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] text-glow"
                     >
                         Sagar Sahu
                     </motion.h1>
-                    <motion.p 
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 0.2 }}
-                        className="mt-4 text-xl md:text-2xl text-gray-300"
-                    >
-                        Writer of worlds, dreamer of chaos.
-                    </motion.p>
+                    <AnimatePresence mode="wait">
+                         <motion.p 
+                            key={taglineIndex}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ duration: 0.8 }}
+                            className="mt-4 text-xl md:text-2xl text-gray-300 font-sans tracking-wider"
+                        >
+                            {FUTURISTIC_TAGLINES[taglineIndex]}
+                        </motion.p>
+                    </AnimatePresence>
                 </div>
             </section>
         );
@@ -106,7 +121,7 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ slides }) => {
                     initial={{ opacity: 0, y: 50 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.2 }}
-                    className="text-5xl md:text-7xl font-black font-serif text-gold drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]"
+                    className="text-5xl md:text-7xl font-black font-serif text-gold drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] text-glow"
                 >
                     {slide.title}
                 </motion.h1>
@@ -121,12 +136,13 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ slides }) => {
                 </motion.p>
                 <motion.button 
                     key={`button-${page}`}
+                    onClick={() => onSlideClick(slide)}
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.5, delay: 0.6 }}
                     className="mt-8 px-8 py-3 bg-gold text-black font-bold rounded-lg shadow-lg shadow-gold/20 hover:bg-yellow-300 transform hover:scale-105 transition-all duration-300"
                 >
-                    Read Now
+                    {slide.type === ContentType.Documentary ? 'Watch Now' : 'Read Now'}
                 </motion.button>
             </div>
             

@@ -1,5 +1,6 @@
 
-import React, { useState, useRef, RefObject, useEffect } from 'react';
+
+import React, { useState, useRef, RefObject, useEffect, useMemo } from 'react';
 import Navbar from './components/Navbar';
 import HeroSlider from './components/HeroSlider';
 import ContentSection from './components/ContentSection';
@@ -8,7 +9,7 @@ import Modal from './components/Modal';
 import ContentDetailModal from './components/ContentDetailModal';
 import AboutSection from './components/AboutSection';
 import CommunitySection from './components/CommunitySection';
-import { MOCK_COMMENTS, SAGAR_SAHU_ADMIN } from './constants';
+import { SAGAR_SAHU_ADMIN } from './constants';
 import { User, Comment, ContentItem, ContentType } from './types';
 import { SoundOnIcon, SoundOffIcon } from './components/Icons';
 
@@ -229,6 +230,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, onAddContent, 
     const [activeTab, setActiveTab] = useState('content');
     const [title, setTitle] = useState('');
     const [summary, setSummary] = useState('');
+    const [tagline, setTagline] = useState('');
     const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
     const [contentFile, setContentFile] = useState<File | null>(null);
     const [tags, setTags] = useState('');
@@ -257,12 +259,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, onAddContent, 
         const newItemData = {
             type: type,
             title: title,
+            tagline: tagline,
             description: summary,
             tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
         };
         onAddContent(newItemData, coverImageFile, contentFile || undefined);
         setTitle('');
         setSummary('');
+        setTagline('');
         setCoverImageFile(null);
         setContentFile(null);
         setTags('');
@@ -337,6 +341,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, onAddContent, 
                     <form onSubmit={handleContentSubmit} className="space-y-4">
                         <select value={type} onChange={(e) => setType(e.target.value as ContentType)} className="w-full mt-1 p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none"><option value={ContentType.Story}>Story</option><option value={ContentType.Documentary}>Documentary</option><option value={ContentType.Article}>Article</option></select>
                         <input type="text" placeholder="Title" value={title} onChange={e => setTitle(e.target.value)} required className="w-full p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none" />
+                        <input type="text" placeholder="Tagline (for Hero Slider)" value={tagline} onChange={e => setTagline(e.target.value)} required className="w-full p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none" />
                         <textarea placeholder="Summary" rows={4} value={summary} onChange={e => setSummary(e.target.value)} required className="w-full p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none" />
                         <div><label className="text-sm font-medium text-gray-400">Cover Image</label><input type="file" onChange={handleCoverImageChange} required accept="image/*" className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gold/20 file:text-gold hover:file:bg-gold/30 file:cursor-pointer"/></div>
                         <div><label className="text-sm font-medium text-gray-400">Content File (PDF, DOCX, PPTX, HTML)</label><input type="file" onChange={handleContentFileChange} accept=".pdf,.docx,.pptx,.html" className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gold/20 file:text-gold hover:file:bg-gold/30 file:cursor-pointer"/></div>
@@ -420,6 +425,10 @@ function App() {
         about: useRef<HTMLDivElement>(null),
         contact: useRef<HTMLDivElement>(null),
     };
+    
+    const allContentForSlider = useMemo(() => {
+        return [...stories, ...documentaries, ...articles];
+    }, [stories, documentaries, articles]);
 
     // --- Data Persistence Effects ---
     useEffect(() => {
@@ -427,7 +436,7 @@ function App() {
             setStories(JSON.parse(localStorage.getItem('sagar_stories') || '[]'));
             setDocumentaries(JSON.parse(localStorage.getItem('sagar_documentaries') || '[]'));
             setArticles(JSON.parse(localStorage.getItem('sagar_articles') || '[]'));
-            setComments(JSON.parse(localStorage.getItem('sagar_comments') || 'null') || MOCK_COMMENTS);
+            setComments(JSON.parse(localStorage.getItem('sagar_comments') || '[]'));
             setAdminPassword(localStorage.getItem('sagar_admin_password') || 'password123');
             setSocialLinks(JSON.parse(localStorage.getItem('sagar_social_links') || 'null') || { youtube: '', instagram: '', reddit: '', facebook: '', x: ''});
 
@@ -563,7 +572,7 @@ function App() {
             <div className="absolute inset-0 h-screen bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(255,215,0,0.15),rgba(255,255,255,0))] opacity-50"></div>
             <Navbar onScrollTo={handleScrollTo} onAuthClick={() => setAuthModalOpen(true)} onAdminClick={() => setAdminModalOpen(true)} isLoggedIn={isLoggedIn} user={currentUser} onLogout={handleLogout} onChangePassword={() => setPasswordModalOpen(true)} onProfileSettings={() => setProfileModalOpen(true)} />
             <main>
-                <div ref={sectionRefs.home}><HeroSlider slides={stories} /></div>
+                <div ref={sectionRefs.home}><HeroSlider slides={allContentForSlider} onSlideClick={setSelectedContent} /></div>
                 <div ref={sectionRefs.stories}><ContentSection id="stories" title="Featured Stories" items={stories} isAdmin={isAdmin} onDeleteContent={handleDeleteContent} onReadMore={setSelectedContent} /></div>
                 <div ref={sectionRefs.documentaries}><ContentSection id="documentaries" title="Documentaries" items={documentaries} isAdmin={isAdmin} onDeleteContent={handleDeleteContent} onReadMore={setSelectedContent} /></div>
                 <div ref={sectionRefs.articles}><ContentSection id="articles" title="Articles" items={articles} isAdmin={isAdmin} onDeleteContent={handleDeleteContent} onReadMore={setSelectedContent} /></div>

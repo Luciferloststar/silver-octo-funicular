@@ -64,6 +64,23 @@
       .protected-content::-moz-selection {
         background: transparent;
       }
+      .text-glow {
+        text-shadow: 0 0 4px var(--color-gold), 0 0 8px var(--color-gold), 0 0 12px rgba(255, 215, 0, 0.5);
+      }
+      /* Ken Burns Effect */
+      @keyframes kenburns-top {
+        0% {
+          transform: scale(1) translateY(0);
+          transform-origin: 50% 16%;
+        }
+        100% {
+          transform: scale(1.1) translateY(-15px);
+          transform-origin: top;
+        }
+      }
+      .kenburns {
+        animation: kenburns-top 15s ease-out infinite alternate;
+      }
     </style>
   <script type="importmap">
 {

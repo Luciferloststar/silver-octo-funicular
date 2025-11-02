@@ -55,7 +55,7 @@ const Navbar: React.FC<NavbarProps> = ({ onScrollTo, onAuthClick, onAdminClick, 
             className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'py-4 glassmorphism' : 'py-6'}`}
         >
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-                <div className="text-2xl font-bold font-serif tracking-widest text-gold cursor-pointer" onClick={() => onScrollTo('home')}>
+                <div className="text-2xl font-bold font-serif tracking-widest text-gold cursor-pointer text-glow" onClick={() => onScrollTo('home')}>
                     SAGAR SAHU
                 </div>
                 <div className="hidden md:flex items-center space-x-8">
@@ -94,7 +94,7 @@ const Navbar: React.FC<NavbarProps> = ({ onScrollTo, onAuthClick, onAdminClick, 
                     ) : (
                          <button onClick={onAuthClick} className="border border-gold text-gold px-4 py-2 rounded-md hover:bg-gold hover:text-black transition-all duration-300 flex items-center space-x-2">
                             <UserIcon className="w-4 h-4" />
-                            <span>Login / Sign Up</span>
+                            <span>Admin Login</span>
                         </button>
                     )}
                 </div>
