@@ -68,14 +68,21 @@ const AuthForm: React.FC<{ onLogin: (user: User) => void }> = ({ onLogin }) => {
 };
 
 // --- AdminDashboard Component (defined in App.tsx) ---
-const AdminDashboard: React.FC<{onClose: () => void; onAddContent: (item: ContentItem) => void;}> = ({onClose, onAddContent}) => {
+interface AdminDashboardProps {
+    onClose: () => void;
+    onAddContent: (item: ContentItem) => void;
+    onRestoreAll: (data: { stories: ContentItem[], documentaries: ContentItem[], articles: ContentItem[] }) => void;
+    allContent: { stories: ContentItem[], documentaries: ContentItem[], articles: ContentItem[] };
+}
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, onAddContent, onRestoreAll, allContent }) => {
     const [title, setTitle] = useState('');
     const [summary, setSummary] = useState('');
     const [coverImage, setCoverImage] = useState<string | null>(null);
     const [tags, setTags] = useState('');
     const [type, setType] = useState<ContentType>(ContentType.Story);
+    const restoreInputRef = useRef<HTMLInputElement>(null);
 
-     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -100,42 +107,105 @@ const AdminDashboard: React.FC<{onClose: () => void; onAddContent: (item: Conten
             tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
         };
         onAddContent(newItem);
-        onClose();
+        // Reset form
+        setTitle('');
+        setSummary('');
+        setCoverImage(null);
+        setTags('');
+    };
+
+    const handleBackup = () => {
+        const dataStr = JSON.stringify(allContent, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `sagar_portfolio_backup_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
+    const handleRestoreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const result = event.target?.result;
+                if (typeof result !== 'string') {
+                    throw new Error("Failed to read file.");
+                }
+                const parsedData = JSON.parse(result);
+                // Basic validation
+                if (Array.isArray(parsedData.stories) && Array.isArray(parsedData.documentaries) && Array.isArray(parsedData.articles)) {
+                    if (window.confirm("Are you sure you want to restore? This will overwrite all current content.")) {
+                        onRestoreAll(parsedData);
+                        alert("Content restored successfully!");
+                        onClose();
+                    }
+                } else {
+                    throw new Error("Invalid backup file format.");
+                }
+            } catch (error) {
+                console.error("Restore failed:", error);
+                alert(`Failed to restore content. Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            } finally {
+                // Reset file input
+                if (restoreInputRef.current) {
+                    restoreInputRef.current.value = '';
+                }
+            }
+        };
+        reader.readAsText(file);
     };
 
     return (
-         <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
-             <div>
-                <label className="text-sm font-medium text-gray-400">Content Type</label>
-                <select value={type} onChange={(e) => setType(e.target.value as ContentType)} className="w-full mt-1 p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none">
-                    <option value={ContentType.Story}>Story</option>
-                    <option value={ContentType.Documentary}>Documentary</option>
-                    <option value={ContentType.Article}>Article</option>
-                </select>
+         <div className="max-h-[70vh] flex flex-col">
+            <div className="border-b border-gold/20 pb-4 mb-4">
+                <h3 className="text-lg font-semibold text-gold mb-2">Data Management</h3>
+                <div className="flex space-x-2">
+                    <button type="button" onClick={handleBackup} className="flex-1 py-2 px-4 bg-gold/20 text-gold font-semibold rounded-lg hover:bg-gold hover:text-black transition-colors text-sm">Backup Content</button>
+                    <button type="button" onClick={() => restoreInputRef.current?.click()} className="flex-1 py-2 px-4 border border-gold text-gold font-semibold rounded-lg hover:bg-gold hover:text-black transition-colors text-sm">Restore Content</button>
+                    <input type="file" ref={restoreInputRef} onChange={handleRestoreChange} accept="application/json" className="hidden" />
+                </div>
             </div>
-            <div>
-                <label className="text-sm font-medium text-gray-400">Title</label>
-                <input type="text" value={title} onChange={e => setTitle(e.target.value)} required className="w-full mt-1 p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none" />
-            </div>
-             <div>
-                <label className="text-sm font-medium text-gray-400">Summary</label>
-                <textarea rows={4} value={summary} onChange={e => setSummary(e.target.value)} required className="w-full mt-1 p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none" />
-            </div>
-             <div>
-                <label className="text-sm font-medium text-gray-400">Thumbnail Image</label>
-                <input type="file" onChange={handleImageChange} required accept="image/*" className="w-full mt-1 text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gold/20 file:text-gold hover:file:bg-gold/30 file:cursor-pointer"/>
-                {coverImage && <img src={coverImage} alt="Preview" className="mt-2 rounded-lg max-h-40 w-full object-cover"/>}
-            </div>
-             <div>
-                <label className="text-sm font-medium text-gray-400">Tags (comma-separated)</label>
-                <input type="text" value={tags} onChange={e => setTags(e.target.value)} className="w-full mt-1 p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none" />
-            </div>
-            <button type="submit" className="w-full py-3 bg-gold text-black font-bold rounded-lg hover:bg-yellow-300 transition-colors">
-                Upload Content
-            </button>
-        </form>
+            <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto pr-2 flex-grow">
+                 <div>
+                    <label className="text-sm font-medium text-gray-400">Content Type</label>
+                    <select value={type} onChange={(e) => setType(e.target.value as ContentType)} className="w-full mt-1 p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none">
+                        <option value={ContentType.Story}>Story</option>
+                        <option value={ContentType.Documentary}>Documentary</option>
+                        <option value={ContentType.Article}>Article</option>
+                    </select>
+                </div>
+                <div>
+                    <label className="text-sm font-medium text-gray-400">Title</label>
+                    <input type="text" value={title} onChange={e => setTitle(e.target.value)} required className="w-full mt-1 p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none" />
+                </div>
+                 <div>
+                    <label className="text-sm font-medium text-gray-400">Summary</label>
+                    <textarea rows={4} value={summary} onChange={e => setSummary(e.target.value)} required className="w-full mt-1 p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none" />
+                </div>
+                 <div>
+                    <label className="text-sm font-medium text-gray-400">Thumbnail Image</label>
+                    <input type="file" onChange={handleImageChange} required accept="image/*" className="w-full mt-1 text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gold/20 file:text-gold hover:file:bg-gold/30 file:cursor-pointer"/>
+                    {coverImage && <img src={coverImage} alt="Preview" className="mt-2 rounded-lg max-h-40 w-full object-cover"/>}
+                </div>
+                 <div>
+                    <label className="text-sm font-medium text-gray-400">Tags (comma-separated)</label>
+                    <input type="text" value={tags} onChange={e => setTags(e.target.value)} className="w-full mt-1 p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none" />
+                </div>
+                <button type="submit" className="w-full py-3 bg-gold text-black font-bold rounded-lg hover:bg-yellow-300 transition-colors">
+                    Upload Content
+                </button>
+            </form>
+        </div>
     );
 };
+
 
 // --- CommunitySection Component (defined in App.tsx) ---
 const CommunitySection: React.FC<{isLoggedIn: boolean; comments: Comment[]}> = ({isLoggedIn, comments}) => {
@@ -227,20 +297,32 @@ function App() {
 
     // Save content to localStorage whenever it changes
     useEffect(() => {
-        if (stories.length > 0) {
-           localStorage.setItem('sagar_stories', JSON.stringify(stories));
+        try {
+            if (stories.length > 0 || localStorage.getItem('sagar_stories')) {
+               localStorage.setItem('sagar_stories', JSON.stringify(stories));
+            }
+        } catch (error) {
+            console.error("Failed to save stories to localStorage", error);
         }
     }, [stories]);
 
     useEffect(() => {
-         if (documentaries.length > 0) {
-            localStorage.setItem('sagar_documentaries', JSON.stringify(documentaries));
-         }
+        try {
+             if (documentaries.length > 0 || localStorage.getItem('sagar_documentaries')) {
+                localStorage.setItem('sagar_documentaries', JSON.stringify(documentaries));
+             }
+        } catch (error) {
+            console.error("Failed to save documentaries to localStorage", error);
+        }
     }, [documentaries]);
 
     useEffect(() => {
-        if (articles.length > 0) {
-            localStorage.setItem('sagar_articles', JSON.stringify(articles));
+        try {
+            if (articles.length > 0 || localStorage.getItem('sagar_articles')) {
+                localStorage.setItem('sagar_articles', JSON.stringify(articles));
+            }
+        } catch (error) {
+            console.error("Failed to save articles to localStorage", error);
         }
     }, [articles]);
     
@@ -278,6 +360,32 @@ function App() {
                 break;
         }
     };
+    
+    const handleRestoreAll = (data: { stories: ContentItem[], documentaries: ContentItem[], articles: ContentItem[] }) => {
+        setStories(data.stories || []);
+        setDocumentaries(data.documentaries || []);
+        setArticles(data.articles || []);
+    };
+
+    const handleDeleteContent = (id: string, type: ContentType) => {
+        if (!window.confirm("Are you sure you want to delete this item permanently?")) {
+            return;
+        }
+
+        switch (type) {
+            case ContentType.Story:
+                setStories(prev => prev.filter(item => item.id !== id));
+                break;
+            case ContentType.Documentary:
+                setDocumentaries(prev => prev.filter(item => item.id !== id));
+                break;
+            case ContentType.Article:
+                setArticles(prev => prev.filter(item => item.id !== id));
+                break;
+        }
+    };
+
+    const isAdmin = currentUser?.id === SAGAR_SAHU_ADMIN.id;
 
     return (
         <div className="bg-[#0a0a0a] min-h-screen relative">
@@ -291,9 +399,9 @@ function App() {
             />
             <main>
                 <div ref={sectionRefs.home}><HeroSlider /></div>
-                <div ref={sectionRefs.stories}><ContentSection id="stories" title="Featured Stories" items={stories} /></div>
-                <div ref={sectionRefs.documentaries}><ContentSection id="documentaries" title="Documentaries" items={documentaries} /></div>
-                <div ref={sectionRefs.articles}><ContentSection id="articles" title="Articles" items={articles} /></div>
+                <div ref={sectionRefs.stories}><ContentSection id="stories" title="Featured Stories" items={stories} isAdmin={isAdmin} onDeleteContent={handleDeleteContent} /></div>
+                <div ref={sectionRefs.documentaries}><ContentSection id="documentaries" title="Documentaries" items={documentaries} isAdmin={isAdmin} onDeleteContent={handleDeleteContent} /></div>
+                <div ref={sectionRefs.articles}><ContentSection id="articles" title="Articles" items={articles} isAdmin={isAdmin} onDeleteContent={handleDeleteContent} /></div>
                 <CommunitySection isLoggedIn={isLoggedIn} comments={MOCK_COMMENTS} />
             </main>
             <div ref={sectionRefs.contact}><Footer /></div>
@@ -305,7 +413,12 @@ function App() {
             </Modal>
             
             <Modal isOpen={adminModalOpen} onClose={() => setAdminModalOpen(false)} title="Content Dashboard">
-                <AdminDashboard onClose={() => setAdminModalOpen(false)} onAddContent={handleAddContent} />
+                <AdminDashboard 
+                    onClose={() => setAdminModalOpen(false)} 
+                    onAddContent={handleAddContent}
+                    onRestoreAll={handleRestoreAll}
+                    allContent={{ stories, documentaries, articles }}
+                />
             </Modal>
         </div>
     );
