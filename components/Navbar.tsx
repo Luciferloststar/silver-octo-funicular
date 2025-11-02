@@ -1,13 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { UserIcon } from './Icons';
+import { User } from '../types';
 
 interface NavbarProps {
     onScrollTo: (id: string) => void;
     onAuthClick: () => void;
     onAdminClick: () => void;
+    onLogout: () => void;
+    onChangePassword: () => void;
+    onProfileSettings: () => void;
     isLoggedIn: boolean;
-    user: { id: string; username: string; avatar: string } | null;
+    user: User | null;
 }
 
 const navLinks = [
@@ -19,15 +24,27 @@ const navLinks = [
     { id: 'contact', name: 'Contact' },
 ];
 
-const Navbar: React.FC<NavbarProps> = ({ onScrollTo, onAuthClick, onAdminClick, isLoggedIn, user }) => {
+const Navbar: React.FC<NavbarProps> = ({ onScrollTo, onAuthClick, onAdminClick, isLoggedIn, user, onLogout, onChangePassword, onProfileSettings }) => {
     const [scrolled, setScrolled] = useState(false);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleScroll = () => {
             setScrolled(window.scrollY > 50);
         };
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsDropdownOpen(false);
+            }
+        };
+
         window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
     }, []);
 
     return (
@@ -48,18 +65,31 @@ const Navbar: React.FC<NavbarProps> = ({ onScrollTo, onAuthClick, onAdminClick, 
                             <span className="absolute left-0 bottom-[-4px] w-0 h-0.5 bg-gold transition-all duration-300 group-hover:w-full"></span>
                         </button>
                     ))}
-                    {isLoggedIn && user?.id === 'admin-sagar' && (
-                        <button onClick={onAdminClick} className="text-gray-300 hover:text-gold transition-colors duration-300 relative group">
-                           Dashboard
-                           <span className="absolute left-0 bottom-[-4px] w-0 h-0.5 bg-gold transition-all duration-300 group-hover:w-full"></span>
-                        </button>
-                    )}
                 </div>
                 <div className="flex items-center space-x-4">
                     {isLoggedIn && user ? (
-                        <div className="flex items-center space-x-2">
-                             <img src={user.avatar} alt={user.username} className="w-8 h-8 rounded-full border-2 border-gold"/>
-                            <span className="text-sm text-gray-300 hidden sm:block">{user.username}</span>
+                        <div className="relative" ref={dropdownRef}>
+                            <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center space-x-2 cursor-pointer">
+                                <img src={user.avatar} alt={user.username} className="w-9 h-9 rounded-full border-2 border-gold"/>
+                                <span className="text-sm text-gray-300 hidden sm:block">{user.username}</span>
+                            </button>
+                            <AnimatePresence>
+                                {isDropdownOpen && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: 10 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="absolute right-0 mt-2 w-48 glassmorphism rounded-lg shadow-lg py-1 border border-gold/20"
+                                    >
+                                        <a onClick={() => { onAdminClick(); setIsDropdownOpen(false); }} className="block px-4 py-2 text-sm text-gray-300 hover:bg-gold/10 hover:text-gold cursor-pointer">Dashboard</a>
+                                        <a onClick={() => { onProfileSettings(); setIsDropdownOpen(false); }} className="block px-4 py-2 text-sm text-gray-300 hover:bg-gold/10 hover:text-gold cursor-pointer">Profile Settings</a>
+                                        <a onClick={() => { onChangePassword(); setIsDropdownOpen(false); }} className="block px-4 py-2 text-sm text-gray-300 hover:bg-gold/10 hover:text-gold cursor-pointer">Change Password</a>
+                                        <div className="border-t border-gold/20 my-1"></div>
+                                        <a onClick={() => { onLogout(); setIsDropdownOpen(false); }} className="block px-4 py-2 text-sm text-gray-300 hover:bg-gold/10 hover:text-gold cursor-pointer">Logout</a>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     ) : (
                          <button onClick={onAuthClick} className="border border-gold text-gold px-4 py-2 rounded-md hover:bg-gold hover:text-black transition-all duration-300 flex items-center space-x-2">

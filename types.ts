@@ -13,11 +13,14 @@ export interface ContentItem {
   description: string;
   coverImage: string;
   tags: string[];
+  contentFileName?: string;
+  contentFileUrl?: string;
 }
 
 export interface User {
-  id: string;
+  id: string; // Profile ID for login
   email: string;
+  notificationEmail: string;
   username: string;
   avatar: string;
 }

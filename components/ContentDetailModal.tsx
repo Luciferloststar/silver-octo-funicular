@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ContentItem } from '../types';
 import Modal from './Modal';
 
@@ -10,9 +10,61 @@ interface ContentDetailModalProps {
 }
 
 const ContentDetailModal: React.FC<ContentDetailModalProps> = ({ isOpen, onClose, item }) => {
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const handleContextMenu = (e: MouseEvent) => e.preventDefault();
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && ['s', 'c', 'p'].includes(e.key.toLowerCase())) {
+                e.preventDefault();
+            }
+            if (e.key === 'PrintScreen') {
+                e.preventDefault();
+            }
+        };
+        const handleCopy = (e: ClipboardEvent) => e.preventDefault();
+
+        document.addEventListener('contextmenu', handleContextMenu);
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('copy', handleCopy);
+
+        return () => {
+            document.removeEventListener('contextmenu', handleContextMenu);
+            document.removeEventListener('keydown', handleKeyDown);
+            document.removeEventListener('copy', handleCopy);
+        };
+    }, [isOpen]);
+
     if (!item) return null;
 
     const renderContent = () => {
+        if (item.contentFileUrl) {
+            if (item.contentFileUrl.startsWith('data:application/pdf')) {
+                return (
+                    <div className="bg-gray-800 p-2 rounded-lg">
+                        <iframe 
+                            src={`${item.contentFileUrl}#toolbar=0`} 
+                            className="w-full h-[60vh] rounded" 
+                            title={item.title}
+                            // sandbox attribute for added security
+                        ></iframe>
+                    </div>
+                );
+            } else {
+                return (
+                    <div>
+                        <p className="text-gray-300 leading-relaxed whitespace-pre-wrap mb-6">{item.description}</p>
+                        <div className="text-center p-6 border border-dashed border-gold/50 rounded-lg bg-gold/10">
+                            <p className="font-semibold text-gold text-lg">Content Protected</p>
+                            <p className="text-sm text-gray-300 mt-2">
+                                The full version of this content is available in a protected format and cannot be downloaded or viewed directly in the browser.
+                            </p>
+                        </div>
+                    </div>
+                );
+            }
+        }
+        
         return <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{item.description}</p>;
     };
     
@@ -24,7 +76,7 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({ isOpen, onClose
                         <span key={tag} className="text-xs text-gold bg-gold/10 px-2 py-1 rounded-full">{tag}</span>
                     ))}
                 </div>
-                <div className="max-h-[65vh] overflow-y-auto pr-4">
+                <div className="max-h-[65vh] overflow-y-auto pr-4 protected-content">
                     {renderContent()}
                 </div>
             </div>

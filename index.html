@@ -52,6 +52,18 @@
       ::-webkit-scrollbar-thumb:hover {
         background: #e6c300;
       }
+      /* Content Protection */
+      .protected-content {
+        -webkit-user-select: none; /* Safari */
+        -ms-user-select: none; /* IE 10+ */
+        user-select: none; /* Standard syntax */
+      }
+      .protected-content::selection {
+        background: transparent;
+      }
+      .protected-content::-moz-selection {
+        background: transparent;
+      }
     </style>
   <script type="importmap">
 {

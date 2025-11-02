@@ -1,8 +1,9 @@
 import { ContentItem, ContentType, User, Comment } from './types';
 
 export const SAGAR_SAHU_ADMIN: User = {
-  id: 'admin-sagar',
+  id: 'sagar_admin',
   email: 'sagar@sahu.com',
+  notificationEmail: 'notifications@sagar.com',
   username: 'Sagar Sahu',
   avatar: 'https://i.pravatar.cc/150?u=sagar-admin'
 };
@@ -97,8 +98,8 @@ export const MOCK_SLIDES: ContentItem[] = [
 
 
 export const MOCK_USERS: User[] = [
-  { id: 'user-1', email: 'reader1@example.com', username: 'CyberReader', avatar: 'https://i.pravatar.cc/150?u=user1' },
-  { id: 'user-2', email: 'fan2@example.com', username: 'StarGazer', avatar: 'https://i.pravatar.cc/150?u=user2' },
+  { id: 'user-1', email: 'reader1@example.com', username: 'CyberReader', avatar: 'https://i.pravatar.cc/150?u=user1', notificationEmail: 'reader1@example.com' },
+  { id: 'user-2', email: 'fan2@example.com', username: 'StarGazer', avatar: 'https://i.pravatar.cc/150?u=user2', notificationEmail: 'fan2@example.com' },
 ];
 
 export const MOCK_COMMENTS: Comment[] = [
