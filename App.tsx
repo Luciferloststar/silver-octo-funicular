@@ -12,7 +12,7 @@ import { User, Comment, ContentItem, ContentType } from './types';
 import { SoundOnIcon, SoundOffIcon } from './components/Icons';
 
 // --- AuthForm Component ---
-const AuthForm: React.FC<{ onLogin: (profileId: string, password: string) => void, defaultId: string }> = ({ onLogin, defaultId }) => {
+const AuthForm: React.FC<{ onLogin: (profileId: string, password: string) => void, defaultId: string, onForgotPassword: () => void }> = ({ onLogin, defaultId, onForgotPassword }) => {
     const [profileId, setProfileId] = useState(defaultId);
     const [password, setPassword] = useState('');
 
@@ -22,7 +22,7 @@ const AuthForm: React.FC<{ onLogin: (profileId: string, password: string) => voi
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
             <div>
                 <label className="text-sm font-medium text-gray-400">Profile ID</label>
                 <input 
@@ -44,9 +44,69 @@ const AuthForm: React.FC<{ onLogin: (profileId: string, password: string) => voi
             <button type="submit" className="w-full py-3 bg-gold text-black font-bold rounded-lg hover:bg-yellow-300 transition-colors">
                 Login
             </button>
+             <div className="text-center pt-2">
+                <button type="button" onClick={onForgotPassword} className="text-sm text-gold hover:underline">
+                    Forgot Password?
+                </button>
+            </div>
         </form>
     );
 };
+
+// --- ForgotPasswordForm Component ---
+const ForgotPasswordForm: React.FC<{ onReset: (profileId: string, email: string) => boolean; onClose: () => void; defaultId: string; }> = ({ onReset, onClose, defaultId }) => {
+    const [profileId, setProfileId] = useState(defaultId);
+    const [email, setEmail] = useState('');
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
+        const success = onReset(profileId, email);
+        if (success) {
+            setSuccess('Password has been reset to the default. Please log in with the default password and change it immediately.');
+            setTimeout(onClose, 4000);
+        } else {
+            setError('The provided Profile ID or Notification Email is incorrect.');
+        }
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+            {success && <p className="text-green-500 text-sm">{success}</p>}
+            {!success && (
+                <>
+                    <p className="text-sm text-gray-400">Enter your profile ID and notification email to reset your password to the default.</p>
+                    <div>
+                        <label className="text-sm font-medium text-gray-400">Profile ID</label>
+                        <input
+                            type="text"
+                            value={profileId}
+                            onChange={(e) => setProfileId(e.target.value)}
+                            required
+                            className="w-full mt-1 p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none transition-all" />
+                    </div>
+                    <div>
+                        <label className="text-sm font-medium text-gray-400">Notification Email</label>
+                        <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                            className="w-full mt-1 p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none transition-all" />
+                    </div>
+                    <button type="submit" className="w-full py-3 bg-gold text-black font-bold rounded-lg hover:bg-yellow-300 transition-colors">
+                        Reset Password
+                    </button>
+                </>
+            )}
+        </form>
+    );
+};
+
 
 // --- ChangePasswordForm Component ---
 const ChangePasswordForm: React.FC<{ onPasswordChange: (oldPass: string, newPass: string) => boolean; onClose: () => void; notificationEmail: string; }> = ({ onPasswordChange, onClose, notificationEmail }) => {
@@ -400,6 +460,7 @@ function App() {
     const [adminModalOpen, setAdminModalOpen] = useState(false);
     const [passwordModalOpen, setPasswordModalOpen] = useState(false);
     const [profileModalOpen, setProfileModalOpen] = useState(false);
+    const [forgotPasswordModalOpen, setForgotPasswordModalOpen] = useState(false);
     const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
 
     // Site settings state
@@ -475,6 +536,20 @@ function App() {
         return false;
     };
 
+    const handlePasswordReset = (profileId: string, email: string): boolean => {
+        const userProfile = JSON.parse(localStorage.getItem('sagar_user_profile') || 'null') || SAGAR_SAHU_ADMIN;
+        if (profileId === userProfile.id && email === userProfile.notificationEmail) {
+            setAdminPassword('password123'); // Reset to default
+            return true;
+        }
+        return false;
+    };
+
+    const handleForgotPasswordClick = () => {
+        setAuthModalOpen(false);
+        setForgotPasswordModalOpen(true);
+    };
+
     const handleProfileUpdate = (updatedUser: User) => {
         setCurrentUser(updatedUser);
     };
@@ -543,9 +618,14 @@ function App() {
             </main>
             <div ref={sectionRefs.contact}><Footer socialLinks={socialLinks} /></div>
             <AudioToggle audioRef={audioRef} />
+
             <Modal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} title="Admin Login">
-                <AuthForm onLogin={handleLogin} defaultId={SAGAR_SAHU_ADMIN.id} />
+                <AuthForm onLogin={handleLogin} defaultId={SAGAR_SAHU_ADMIN.id} onForgotPassword={handleForgotPasswordClick} />
             </Modal>
+            <Modal isOpen={forgotPasswordModalOpen} onClose={() => setForgotPasswordModalOpen(false)} title="Reset Password">
+                <ForgotPasswordForm onReset={handlePasswordReset} onClose={() => setForgotPasswordModalOpen(false)} defaultId={SAGAR_SAHU_ADMIN.id} />
+            </Modal>
+
              {currentUser && (
                 <>
                     <Modal isOpen={passwordModalOpen} onClose={() => setPasswordModalOpen(false)} title="Change Password">

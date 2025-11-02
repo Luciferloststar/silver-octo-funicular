@@ -39,14 +39,17 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({ isOpen, onClose
 
     const renderContent = () => {
         if (item.contentFileUrl) {
-            if (item.contentFileUrl.startsWith('data:application/pdf')) {
+            const isPdf = item.contentFileUrl.startsWith('data:application/pdf');
+            const isHtml = item.contentFileUrl.startsWith('data:text/html');
+
+            if (isPdf || isHtml) {
                 return (
                     <div className="bg-gray-800 p-2 rounded-lg">
-                        <iframe 
-                            src={`${item.contentFileUrl}#toolbar=0`} 
-                            className="w-full h-[60vh] rounded" 
+                        <iframe
+                            src={isPdf ? `${item.contentFileUrl}#toolbar=0` : item.contentFileUrl}
+                            className="w-full h-[60vh] rounded"
                             title={item.title}
-                            // sandbox attribute for added security
+                            sandbox="allow-scripts allow-same-origin"
                         ></iframe>
                     </div>
                 );
@@ -55,16 +58,16 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({ isOpen, onClose
                     <div>
                         <p className="text-gray-300 leading-relaxed whitespace-pre-wrap mb-6">{item.description}</p>
                         <div className="text-center p-6 border border-dashed border-gold/50 rounded-lg bg-gold/10">
-                            <p className="font-semibold text-gold text-lg">Content Protected</p>
+                            <p className="font-semibold text-gold text-lg">Preview Unavailable</p>
                             <p className="text-sm text-gray-300 mt-2">
-                                The full version of this content is available in a protected format and cannot be downloaded or viewed directly in the browser.
+                                This content format ({item.contentFileName?.split('.').pop()?.toUpperCase()}) cannot be previewed directly in the browser. The content remains protected.
                             </p>
                         </div>
                     </div>
                 );
             }
         }
-        
+
         return <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{item.description}</p>;
     };
     
