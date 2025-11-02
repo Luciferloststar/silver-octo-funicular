@@ -82,21 +82,6 @@ export const MOCK_ARTICLES: ContentItem[] = [
   },
 ];
 
-export const MOCK_SLIDES: ContentItem[] = [
-  MOCK_STORIES[0],
-  {
-    id: 'story-4',
-    type: ContentType.Story,
-    title: 'Neon Requiem',
-    tagline: 'Where chrome meets soul.',
-    description: 'A bio-engineered detective hunts a killer who can manipulate memories in a rain-drenched, neon-lit metropolis of 2099.',
-    coverImage: 'https://picsum.photos/seed/neonrequiem/1920/1080',
-    tags: ['Cyberpunk', 'Noir', 'Sci-Fi'],
-  },
-  MOCK_DOCS[1],
-];
-
-
 export const MOCK_USERS: User[] = [
   { id: 'user-1', email: 'reader1@example.com', username: 'CyberReader', avatar: 'https://i.pravatar.cc/150?u=user1', notificationEmail: 'reader1@example.com' },
   { id: 'user-2', email: 'fan2@example.com', username: 'StarGazer', avatar: 'https://i.pravatar.cc/150?u=user2', notificationEmail: 'fan2@example.com' },

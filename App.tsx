@@ -1,13 +1,14 @@
 
 import React, { useState, useRef, RefObject, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import Navbar from './components/Navbar';
 import HeroSlider from './components/HeroSlider';
 import ContentSection from './components/ContentSection';
 import Footer from './components/Footer';
 import Modal from './components/Modal';
 import ContentDetailModal from './components/ContentDetailModal';
-import { MOCK_STORIES, MOCK_DOCS, MOCK_ARTICLES, MOCK_COMMENTS, SAGAR_SAHU_ADMIN } from './constants';
+import AboutSection from './components/AboutSection';
+import CommunitySection from './components/CommunitySection';
+import { MOCK_COMMENTS, SAGAR_SAHU_ADMIN } from './constants';
 import { User, Comment, ContentItem, ContentType } from './types';
 import { SoundOnIcon, SoundOffIcon } from './components/Icons';
 
@@ -357,65 +358,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, onAddContent, 
     );
 };
 
-// FIX: Replaced placeholder components with full implementations to resolve typing errors.
-// --- CommunitySection Component ---
-const CommunitySection: React.FC<{isLoggedIn: boolean; comments: Comment[]}> = ({isLoggedIn, comments}) => {
-    return (
-        <section className="py-20 bg-surface">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                 <h2 className="text-4xl md:text-5xl font-bold font-serif text-center mb-12 text-gold">Reader Community</h2>
-                 <div className="max-w-3xl mx-auto space-y-6">
-                    {comments.map(comment => (
-                        <div key={comment.id} className="glassmorphism p-4 rounded-lg flex space-x-4">
-                            <img src={comment.user.avatar} alt={comment.user.username} className="w-12 h-12 rounded-full border-2 border-gold/50" />
-                            <div>
-                                <p className="font-bold text-gold">{comment.user.username} <span className="text-xs text-gray-500 font-normal ml-2">{comment.timestamp}</span></p>
-                                <p className="text-gray-300">{comment.text}</p>
-                            </div>
-                        </div>
-                    ))}
-                    {isLoggedIn && (
-                        <div className="pt-6">
-                           <textarea placeholder="Share your thoughts..." rows={4} className="w-full p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none transition-all" />
-                           <button className="mt-2 px-6 py-2 bg-gold text-black font-bold rounded-lg hover:bg-yellow-300 transition-colors">Post Comment</button>
-                        </div>
-                    )}
-                 </div>
-            </div>
-        </section>
-    );
-};
-
-// AboutSection Component
-const AboutSection: React.FC = () => (
-    <section id="about" className="py-20 md:py-32 bg-surface">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <motion.div
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ duration: 0.8 }}
-                className="max-w-3xl mx-auto"
-            >
-                <h2 className="text-4xl md:text-5xl font-bold font-serif mb-8 text-gold">
-                    About The Storyteller
-                </h2>
-                <img 
-                    src={SAGAR_SAHU_ADMIN.avatar} 
-                    alt="Sagar Sahu" 
-                    className="w-40 h-40 rounded-full mx-auto mb-8 border-4 border-gold shadow-lg"
-                />
-                <p className="text-lg text-gray-300 leading-relaxed mb-4">
-                    Sagar Sahu is a visionary storyteller weaving narratives that transcend genre and reality. With a passion for exploring the depths of human nature against epic, cinematic backdrops, his work ranges from mind-bending cyberpunk thrillers to sprawling space operas and insightful documentaries on the future of technology.
-                </p>
-                <p className="text-lg text-gray-300 leading-relaxed">
-                    Drawing inspiration from philosophy, science, and the timeless art of myth-making, Sagar crafts worlds that are both fantastical and deeply resonant. His goal is not just to entertain, but to challenge perspectives and ignite the imagination of his readers, inviting them on journeys that linger long after the final page is turned.
-                </p>
-            </motion.div>
-        </div>
-    </section>
-);
-
 // AudioToggle Component
 const AudioToggle: React.FC<{audioRef: RefObject<HTMLAudioElement>}> = ({audioRef}) => {
     const [isPlaying, setIsPlaying] = useState(false);
@@ -449,6 +391,7 @@ function App() {
     const [stories, setStories] = useState<ContentItem[]>([]);
     const [documentaries, setDocumentaries] = useState<ContentItem[]>([]);
     const [articles, setArticles] = useState<ContentItem[]>([]);
+    const [comments, setComments] = useState<Comment[]>([]);
 
     // Auth & User State
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -481,9 +424,10 @@ function App() {
     // --- Data Persistence Effects ---
     useEffect(() => {
         try {
-            setStories(JSON.parse(localStorage.getItem('sagar_stories') || 'null') || MOCK_STORIES);
-            setDocumentaries(JSON.parse(localStorage.getItem('sagar_documentaries') || 'null') || MOCK_DOCS);
-            setArticles(JSON.parse(localStorage.getItem('sagar_articles') || 'null') || MOCK_ARTICLES);
+            setStories(JSON.parse(localStorage.getItem('sagar_stories') || '[]'));
+            setDocumentaries(JSON.parse(localStorage.getItem('sagar_documentaries') || '[]'));
+            setArticles(JSON.parse(localStorage.getItem('sagar_articles') || '[]'));
+            setComments(JSON.parse(localStorage.getItem('sagar_comments') || 'null') || MOCK_COMMENTS);
             setAdminPassword(localStorage.getItem('sagar_admin_password') || 'password123');
             setSocialLinks(JSON.parse(localStorage.getItem('sagar_social_links') || 'null') || { youtube: '', instagram: '', reddit: '', facebook: '', x: ''});
 
@@ -499,13 +443,12 @@ function App() {
     useEffect(() => { localStorage.setItem('sagar_stories', JSON.stringify(stories)); }, [stories]);
     useEffect(() => { localStorage.setItem('sagar_documentaries', JSON.stringify(documentaries)); }, [documentaries]);
     useEffect(() => { localStorage.setItem('sagar_articles', JSON.stringify(articles)); }, [articles]);
+    useEffect(() => { localStorage.setItem('sagar_comments', JSON.stringify(comments)); }, [comments]);
     useEffect(() => { localStorage.setItem('sagar_admin_password', adminPassword); }, [adminPassword]);
     useEffect(() => { localStorage.setItem('sagar_social_links', JSON.stringify(socialLinks)); }, [socialLinks]);
     useEffect(() => { localStorage.setItem('sagar_isLoggedIn', String(isLoggedIn)); }, [isLoggedIn]);
     useEffect(() => { if(currentUser) localStorage.setItem('sagar_user_profile', JSON.stringify(currentUser)); }, [currentUser]);
     
-    useEffect(() => { /* ... unchanged ... */ }, []);
-
     // --- Handlers ---
     const handleScrollTo = (id: string) => {
         const ref = sectionRefs[id as keyof typeof sectionRefs];
@@ -601,6 +544,17 @@ function App() {
         const setter = { [ContentType.Story]: setStories, [ContentType.Documentary]: setDocumentaries, [ContentType.Article]: setArticles }[type];
         setter(prev => prev.filter(item => item.id !== id));
     };
+    
+    const handleAddComment = (text: string) => {
+        if (!currentUser) return;
+        const newComment: Comment = {
+            id: `comment-${Date.now()}`,
+            user: currentUser,
+            text,
+            timestamp: 'Just now'
+        };
+        setComments(prev => [newComment, ...prev]);
+    };
 
     const isAdmin = currentUser?.id === SAGAR_SAHU_ADMIN.id;
 
@@ -609,12 +563,12 @@ function App() {
             <div className="absolute inset-0 h-screen bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(255,215,0,0.15),rgba(255,255,255,0))] opacity-50"></div>
             <Navbar onScrollTo={handleScrollTo} onAuthClick={() => setAuthModalOpen(true)} onAdminClick={() => setAdminModalOpen(true)} isLoggedIn={isLoggedIn} user={currentUser} onLogout={handleLogout} onChangePassword={() => setPasswordModalOpen(true)} onProfileSettings={() => setProfileModalOpen(true)} />
             <main>
-                <div ref={sectionRefs.home}><HeroSlider /></div>
+                <div ref={sectionRefs.home}><HeroSlider slides={stories} /></div>
                 <div ref={sectionRefs.stories}><ContentSection id="stories" title="Featured Stories" items={stories} isAdmin={isAdmin} onDeleteContent={handleDeleteContent} onReadMore={setSelectedContent} /></div>
                 <div ref={sectionRefs.documentaries}><ContentSection id="documentaries" title="Documentaries" items={documentaries} isAdmin={isAdmin} onDeleteContent={handleDeleteContent} onReadMore={setSelectedContent} /></div>
                 <div ref={sectionRefs.articles}><ContentSection id="articles" title="Articles" items={articles} isAdmin={isAdmin} onDeleteContent={handleDeleteContent} onReadMore={setSelectedContent} /></div>
-                <CommunitySection isLoggedIn={isLoggedIn} comments={MOCK_COMMENTS} />
-                <div ref={sectionRefs.about}><AboutSection /></div>
+                <CommunitySection isLoggedIn={isLoggedIn} comments={comments} currentUser={currentUser} onAddComment={handleAddComment} />
+                <div ref={sectionRefs.about}><AboutSection user={currentUser || SAGAR_SAHU_ADMIN} /></div>
             </main>
             <div ref={sectionRefs.contact}><Footer socialLinks={socialLinks} /></div>
             <AudioToggle audioRef={audioRef} />
