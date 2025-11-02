@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, RefObject, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Navbar from './components/Navbar';
@@ -5,11 +6,12 @@ import HeroSlider from './components/HeroSlider';
 import ContentSection from './components/ContentSection';
 import Footer from './components/Footer';
 import Modal from './components/Modal';
+import ContentDetailModal from './components/ContentDetailModal';
 import { MOCK_STORIES, MOCK_DOCS, MOCK_ARTICLES, MOCK_COMMENTS, SAGAR_SAHU_ADMIN } from './constants';
 import { User, Comment, ContentItem, ContentType } from './types';
 import { SoundOnIcon, SoundOffIcon } from './components/Icons';
 
-// --- AuthForm Component (defined in App.tsx) ---
+// --- AuthForm Component ---
 const AuthForm: React.FC<{ onLogin: (user: User) => void }> = ({ onLogin }) => {
     const [isLogin, setIsLogin] = useState(true);
     const [email, setEmail] = useState('');
@@ -67,7 +69,7 @@ const AuthForm: React.FC<{ onLogin: (user: User) => void }> = ({ onLogin }) => {
     );
 };
 
-// --- AdminDashboard Component (defined in App.tsx) ---
+// --- AdminDashboard Component ---
 interface AdminDashboardProps {
     onClose: () => void;
     onAddContent: (item: ContentItem) => void;
@@ -75,6 +77,7 @@ interface AdminDashboardProps {
     allContent: { stories: ContentItem[], documentaries: ContentItem[], articles: ContentItem[] };
 }
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, onAddContent, onRestoreAll, allContent }) => {
+    // State for manual upload
     const [title, setTitle] = useState('');
     const [summary, setSummary] = useState('');
     const [coverImage, setCoverImage] = useState<string | null>(null);
@@ -139,7 +142,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, onAddContent, 
                     throw new Error("Failed to read file.");
                 }
                 const parsedData = JSON.parse(result);
-                // Basic validation
                 if (Array.isArray(parsedData.stories) && Array.isArray(parsedData.documentaries) && Array.isArray(parsedData.articles)) {
                     if (window.confirm("Are you sure you want to restore? This will overwrite all current content.")) {
                         onRestoreAll(parsedData);
@@ -153,7 +155,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, onAddContent, 
                 console.error("Restore failed:", error);
                 alert(`Failed to restore content. Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
             } finally {
-                // Reset file input
                 if (restoreInputRef.current) {
                     restoreInputRef.current.value = '';
                 }
@@ -163,51 +164,32 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, onAddContent, 
     };
 
     return (
-         <div className="max-h-[70vh] flex flex-col">
-            <div className="border-b border-gold/20 pb-4 mb-4">
-                <h3 className="text-lg font-semibold text-gold mb-2">Data Management</h3>
-                <div className="flex space-x-2">
-                    <button type="button" onClick={handleBackup} className="flex-1 py-2 px-4 bg-gold/20 text-gold font-semibold rounded-lg hover:bg-gold hover:text-black transition-colors text-sm">Backup Content</button>
-                    <button type="button" onClick={() => restoreInputRef.current?.click()} className="flex-1 py-2 px-4 border border-gold text-gold font-semibold rounded-lg hover:bg-gold hover:text-black transition-colors text-sm">Restore Content</button>
+         <div className="max-h-[80vh] flex flex-col">
+            <div className="flex border-b border-gold/20 mb-6 pb-2 justify-end">
+                 <div className="flex space-x-2">
+                    <button type="button" onClick={handleBackup} className="py-1 px-3 bg-gold/20 text-gold font-semibold rounded-lg hover:bg-gold hover:text-black transition-colors text-xs">Backup</button>
+                    <button type="button" onClick={() => restoreInputRef.current?.click()} className="py-1 px-3 border border-gold text-gold font-semibold rounded-lg hover:bg-gold hover:text-black transition-colors text-xs">Restore</button>
                     <input type="file" ref={restoreInputRef} onChange={handleRestoreChange} accept="application/json" className="hidden" />
                 </div>
             </div>
-            <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto pr-2 flex-grow">
-                 <div>
-                    <label className="text-sm font-medium text-gray-400">Content Type</label>
-                    <select value={type} onChange={(e) => setType(e.target.value as ContentType)} className="w-full mt-1 p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none">
-                        <option value={ContentType.Story}>Story</option>
-                        <option value={ContentType.Documentary}>Documentary</option>
-                        <option value={ContentType.Article}>Article</option>
-                    </select>
-                </div>
-                <div>
-                    <label className="text-sm font-medium text-gray-400">Title</label>
-                    <input type="text" value={title} onChange={e => setTitle(e.target.value)} required className="w-full mt-1 p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none" />
-                </div>
-                 <div>
-                    <label className="text-sm font-medium text-gray-400">Summary</label>
-                    <textarea rows={4} value={summary} onChange={e => setSummary(e.target.value)} required className="w-full mt-1 p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none" />
-                </div>
-                 <div>
-                    <label className="text-sm font-medium text-gray-400">Thumbnail Image</label>
-                    <input type="file" onChange={handleImageChange} required accept="image/*" className="w-full mt-1 text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gold/20 file:text-gold hover:file:bg-gold/30 file:cursor-pointer"/>
+            
+            <div className="overflow-y-auto pr-2 flex-grow">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <select value={type} onChange={(e) => setType(e.target.value as ContentType)} className="w-full mt-1 p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none"><option value={ContentType.Story}>Story</option><option value={ContentType.Documentary}>Documentary</option><option value={ContentType.Article}>Article</option></select>
+                    <input type="text" placeholder="Title" value={title} onChange={e => setTitle(e.target.value)} required className="w-full p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none" />
+                    <textarea placeholder="Summary" rows={4} value={summary} onChange={e => setSummary(e.target.value)} required className="w-full p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none" />
+                    <input type="file" onChange={handleImageChange} required accept="image/*" className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gold/20 file:text-gold hover:file:bg-gold/30 file:cursor-pointer"/>
                     {coverImage && <img src={coverImage} alt="Preview" className="mt-2 rounded-lg max-h-40 w-full object-cover"/>}
-                </div>
-                 <div>
-                    <label className="text-sm font-medium text-gray-400">Tags (comma-separated)</label>
-                    <input type="text" value={tags} onChange={e => setTags(e.target.value)} className="w-full mt-1 p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none" />
-                </div>
-                <button type="submit" className="w-full py-3 bg-gold text-black font-bold rounded-lg hover:bg-yellow-300 transition-colors">
-                    Upload Content
-                </button>
-            </form>
+                    <input placeholder="Tags (comma-separated)" type="text" value={tags} onChange={e => setTags(e.target.value)} className="w-full p-3 bg-white/5 border border-gold/30 rounded-lg focus:ring-2 focus:ring-gold focus:outline-none" />
+                    <button type="submit" className="w-full py-3 bg-gold text-black font-bold rounded-lg hover:bg-yellow-300 transition-colors">Upload Content</button>
+                </form>
+            </div>
         </div>
     );
 };
 
 
-// --- CommunitySection Component (defined in App.tsx) ---
+// --- CommunitySection Component ---
 const CommunitySection: React.FC<{isLoggedIn: boolean; comments: Comment[]}> = ({isLoggedIn, comments}) => {
     return (
         <section className="py-20 bg-surface">
@@ -235,7 +217,38 @@ const CommunitySection: React.FC<{isLoggedIn: boolean; comments: Comment[]}> = (
     );
 };
 
-// --- AudioToggle Component (defined in App.tsx) ---
+// --- AboutSection Component ---
+const AboutSection: React.FC = () => (
+    <section id="about" className="py-20 md:py-32 bg-surface">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <motion.div
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.8 }}
+                className="max-w-3xl mx-auto"
+            >
+                <h2 className="text-4xl md:text-5xl font-bold font-serif mb-8 text-gold">
+                    About The Storyteller
+                </h2>
+                <img 
+                    src={SAGAR_SAHU_ADMIN.avatar} 
+                    alt="Sagar Sahu" 
+                    className="w-40 h-40 rounded-full mx-auto mb-8 border-4 border-gold shadow-lg"
+                />
+                <p className="text-lg text-gray-300 leading-relaxed mb-4">
+                    Sagar Sahu is a visionary storyteller weaving narratives that transcend genre and reality. With a passion for exploring the depths of human nature against epic, cinematic backdrops, his work ranges from mind-bending cyberpunk thrillers to sprawling space operas and insightful documentaries on the future of technology.
+                </p>
+                <p className="text-lg text-gray-300 leading-relaxed">
+                    Drawing inspiration from philosophy, science, and the timeless art of myth-making, Sagar crafts worlds that are both fantastical and deeply resonant. His goal is not just to entertain, but to challenge perspectives and ignite the imagination of his readers, inviting them on journeys that linger long after the final page is turned.
+                </p>
+            </motion.div>
+        </div>
+    </section>
+);
+
+
+// --- AudioToggle Component ---
 const AudioToggle: React.FC<{audioRef: RefObject<HTMLAudioElement>}> = ({audioRef}) => {
     const [isPlaying, setIsPlaying] = useState(false);
 
@@ -267,8 +280,25 @@ function App() {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [authModalOpen, setAuthModalOpen] = useState(false);
     const [adminModalOpen, setAdminModalOpen] = useState(false);
+    const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
 
     const audioRef = useRef<HTMLAudioElement>(null);
+
+    const homeRef = useRef<HTMLDivElement>(null);
+    const storiesRef = useRef<HTMLDivElement>(null);
+    const documentariesRef = useRef<HTMLDivElement>(null);
+    const articlesRef = useRef<HTMLDivElement>(null);
+    const aboutRef = useRef<HTMLDivElement>(null);
+    const contactRef = useRef<HTMLDivElement>(null);
+
+    const sectionRefs = {
+        home: homeRef,
+        stories: storiesRef,
+        documentaries: documentariesRef,
+        articles: articlesRef,
+        about: aboutRef,
+        contact: contactRef,
+    };
 
     // Load content from localStorage on initial render
     useEffect(() => {
@@ -292,6 +322,14 @@ function App() {
             setStories(MOCK_STORIES);
             setDocumentaries(MOCK_DOCS);
             setArticles(MOCK_ARTICLES);
+        }
+    }, []);
+
+    // Connect audio ref to DOM element
+    useEffect(() => {
+        const audioElement = document.getElementById('ambient-sound') as HTMLAudioElement | null;
+        if (audioElement) {
+            audioRef.current = audioElement;
         }
     }, []);
 
@@ -326,16 +364,6 @@ function App() {
         }
     }, [articles]);
     
-    // FIX: Changed HTMLElement to HTMLDivElement for refs attached to div elements.
-    const sectionRefs = {
-        home: useRef<HTMLDivElement>(null),
-        stories: useRef<HTMLDivElement>(null),
-        documentaries: useRef<HTMLDivElement>(null),
-        articles: useRef<HTMLDivElement>(null),
-        about: useRef<HTMLDivElement>(null),
-        contact: useRef<HTMLDivElement>(null),
-    };
-
     const handleScrollTo = (id: string) => {
         const ref = sectionRefs[id as keyof typeof sectionRefs];
         ref.current?.scrollIntoView({ behavior: 'smooth' });
@@ -398,13 +426,14 @@ function App() {
                 user={currentUser}
             />
             <main>
-                <div ref={sectionRefs.home}><HeroSlider /></div>
-                <div ref={sectionRefs.stories}><ContentSection id="stories" title="Featured Stories" items={stories} isAdmin={isAdmin} onDeleteContent={handleDeleteContent} /></div>
-                <div ref={sectionRefs.documentaries}><ContentSection id="documentaries" title="Documentaries" items={documentaries} isAdmin={isAdmin} onDeleteContent={handleDeleteContent} /></div>
-                <div ref={sectionRefs.articles}><ContentSection id="articles" title="Articles" items={articles} isAdmin={isAdmin} onDeleteContent={handleDeleteContent} /></div>
+                <div ref={homeRef}><HeroSlider /></div>
+                <div ref={storiesRef}><ContentSection id="stories" title="Featured Stories" items={stories} isAdmin={isAdmin} onDeleteContent={handleDeleteContent} onReadMore={setSelectedContent} /></div>
+                <div ref={documentariesRef}><ContentSection id="documentaries" title="Documentaries" items={documentaries} isAdmin={isAdmin} onDeleteContent={handleDeleteContent} onReadMore={setSelectedContent} /></div>
+                <div ref={articlesRef}><ContentSection id="articles" title="Articles" items={articles} isAdmin={isAdmin} onDeleteContent={handleDeleteContent} onReadMore={setSelectedContent} /></div>
                 <CommunitySection isLoggedIn={isLoggedIn} comments={MOCK_COMMENTS} />
+                <div ref={aboutRef}><AboutSection /></div>
             </main>
-            <div ref={sectionRefs.contact}><Footer /></div>
+            <div ref={contactRef}><Footer /></div>
             
             <AudioToggle audioRef={audioRef} />
 
@@ -412,7 +441,7 @@ function App() {
                 <AuthForm onLogin={handleLogin} />
             </Modal>
             
-            <Modal isOpen={adminModalOpen} onClose={() => setAdminModalOpen(false)} title="Content Dashboard">
+            <Modal isOpen={adminModalOpen} onClose={() => setAdminModalOpen(false)} title="Content Dashboard" size="large">
                 <AdminDashboard 
                     onClose={() => setAdminModalOpen(false)} 
                     onAddContent={handleAddContent}
@@ -420,6 +449,12 @@ function App() {
                     allContent={{ stories, documentaries, articles }}
                 />
             </Modal>
+            
+            <ContentDetailModal 
+                isOpen={!!selectedContent} 
+                onClose={() => setSelectedContent(null)} 
+                item={selectedContent} 
+            />
         </div>
     );
 }

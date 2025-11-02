@@ -13,7 +13,6 @@ export interface ContentItem {
   description: string;
   coverImage: string;
   tags: string[];
-  content?: string;
 }
 
 export interface User {

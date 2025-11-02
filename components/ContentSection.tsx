@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion, useInView } from 'framer-motion';
 import { ContentItem, ContentType } from '../types';
@@ -29,8 +30,9 @@ interface ContentCardProps {
     index: number;
     isAdmin: boolean;
     onDelete: (id: string, type: ContentType) => void;
+    onReadMore: (item: ContentItem) => void;
 }
-const ContentCard: React.FC<ContentCardProps> = ({ item, index, isAdmin, onDelete }) => {
+const ContentCard: React.FC<ContentCardProps> = ({ item, index, isAdmin, onDelete, onReadMore }) => {
     const cardVariants = {
         hidden: { opacity: 0, y: 50 },
         visible: {
@@ -71,7 +73,7 @@ const ContentCard: React.FC<ContentCardProps> = ({ item, index, isAdmin, onDelet
                     ))}
                 </div>
                 <div className="mt-6 flex justify-between items-center">
-                    <button className="px-5 py-2 bg-gold/20 text-gold rounded-md text-sm hover:bg-gold hover:text-black transition-all duration-300">
+                    <button onClick={() => onReadMore(item)} className="px-5 py-2 bg-gold/20 text-gold rounded-md text-sm hover:bg-gold hover:text-black transition-all duration-300">
                         {item.type === 'DOCUMENTARY' ? 'Watch Now' : 'Read More'}
                     </button>
                     <button className="p-2 text-gray-400 hover:text-gold transition-colors">
@@ -94,8 +96,9 @@ interface ContentSectionProps {
     items: ContentItem[];
     isAdmin: boolean;
     onDeleteContent: (id: string, type: ContentType) => void;
+    onReadMore: (item: ContentItem) => void;
 }
-const ContentSection: React.FC<ContentSectionProps> = ({ id, title, items, isAdmin, onDeleteContent }) => {
+const ContentSection: React.FC<ContentSectionProps> = ({ id, title, items, isAdmin, onDeleteContent, onReadMore }) => {
     const ref = React.useRef(null);
     const isInView = useInView(ref, { once: true, amount: 0.2 });
 
@@ -127,7 +130,7 @@ const ContentSection: React.FC<ContentSectionProps> = ({ id, title, items, isAdm
                     className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
                 >
                     {items.map((item, index) => (
-                        <ContentCard key={item.id} item={item} index={index} isAdmin={isAdmin} onDelete={onDeleteContent}/>
+                        <ContentCard key={item.id} item={item} index={index} isAdmin={isAdmin} onDelete={onDeleteContent} onReadMore={onReadMore}/>
                     ))}
                 </motion.div>
             </div>

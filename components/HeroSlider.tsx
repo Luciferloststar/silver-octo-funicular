@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { ContentItem } from '../types';
@@ -35,10 +36,10 @@ const HeroSlider: React.FC = () => {
 
     useEffect(() => {
         const interval = setInterval(() => {
-            paginate(1);
+            setPage(([prevPage, _]) => [prevPage + 1, 1]);
         }, 5000);
         return () => clearInterval(interval);
-    }, [page]);
+    }, []);
     
     const slide = MOCK_SLIDES[imageIndex];
 

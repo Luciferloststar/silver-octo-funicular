@@ -8,9 +8,12 @@ interface ModalProps {
     onClose: () => void;
     children: React.ReactNode;
     title: string;
+    size?: 'default' | 'large';
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title, size = 'default' }) => {
+    const sizeClass = size === 'large' ? 'max-w-4xl' : 'max-w-md';
+    
     return (
         <AnimatePresence>
             {isOpen && (
@@ -27,7 +30,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title }) => {
                         exit={{ scale: 0.9, opacity: 0, y: 50 }}
                         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="relative w-full max-w-md glassmorphism rounded-2xl p-8 border border-gold/20 shadow-lg shadow-gold/10"
+                        className={`relative w-full ${sizeClass} glassmorphism rounded-2xl p-8 border border-gold/20 shadow-lg shadow-gold/10`}
                     >
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-3xl font-serif font-bold text-gold">{title}</h2>
